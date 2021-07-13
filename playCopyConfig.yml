@@ -28,17 +28,17 @@
     - name: copy test part file to worker instance
       win_copy:
         src: /home/ubuntu/mnt/executable/fileDivider/DividedFile/test.csv
-        dest: C:\Users\VLE\Desktop\test.csv
+        dest: C:\Users\USER\Desktop\test.csv
 
     - name: rename the copied test part
       win_command: cmd.exe
       args:
-        stdin: rename C:\Users\VLE\Desktop\test.csv "{{ testName }}.csv"
+        stdin: rename C:\Users\USER\Desktop\test.csv "{{ testName }}.csv"
 
     - name: move the test part to the appropriate location
       win_command: cmd.exe
       args:
-        stdin: copy C:\Users\VLE\Desktop\*.csv C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Scripts\              
+        stdin: copy C:\Users\USER\Desktop\*.csv C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Scripts\              
     
     - name: remove test.csv file in local
       local_action: file path=/home/ubuntu/mnt/executable/fileDivider/DividedFile/test.csv state=absent
