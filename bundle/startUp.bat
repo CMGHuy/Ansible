@@ -1,0 +1,1 @@
+java -verbose -jar C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Framework\SiebelTestAutomation.jar C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation && @echo>"C:\Users\VLE\Desktop\done.txt"
