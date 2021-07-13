@@ -1,0 +1,9 @@
+# Contains the hosts for RDP. Deprecated, now used localhost instead.
+
+[win]
+10.xx.xx.35
+
+[win:vars]
+ansible_user = ubuntu
+ansible_port = 22
+

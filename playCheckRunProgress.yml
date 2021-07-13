@@ -1,0 +1,39 @@
+---
+
+# This Ansible playbook is used to retrieve the test running progress
+# It reads the subreport_text files retrieved from worker instances.
+# Then, the ProgressTracking jar file summarizes the test progress from subreport_text
+# The current progress of each machine is then inserted into the database by using jar file PushBlob
+
+- name: retrieve test running progress
+  gather_facts: false
+  hosts: all
+  vars:
+    test_progress: /home/ubuntu/mnt/executable/testProgress
+  tasks:
+    - name: copy divided master suite csv file back to master instance
+      fetch:
+        src: C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Scripts\{{ test }}.csv
+        dest:  '{{ test_progress }}/masterSuite/{{ inventory_hostname }}-{{ test }}.csv'
+        flat: true
+
+    - name: copy progress info files back to master instance
+      fetch:
+        src: C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Reports\subreport_text.txt
+        dest: '{{ test_progress }}/subreport_text/{{ inventory_hostname }}-subreport_text.txt'
+        flat: true
+
+    - name: retrieve current progress on each worker instance
+      delegate_to: localhost
+      run_once: true
+      shell: "java -jar {{ test_progress }}/ProgressTracking.jar -r {{ test_progress }}/masterSuite {{ test_progress }}/subreport_text {{ test_progress }}/currentProgress"
+
+    - name: retrieve the current total progress
+      delegate_to: localhost
+      run_once: true
+      shell: "java -jar {{ test_progress }}/ProgressTracking.jar -u {{ test_progress }}/currentProgress {{ test_progress }}/currentProgress/currentProgress.txt"
+
+    - name: push all the progress to db
+      delegate_to: localhost
+      shell: "java -jar /home/ubuntu/mnt/executable/PushBlob_jar/PushBlob.jar -p {{ test_progress }}/currentProgress"
+      

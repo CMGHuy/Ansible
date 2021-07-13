@@ -1,0 +1,24 @@
+---
+
+## Remove DISA resume file. If this file is already available in the host folder,
+## the test can not be initiated
+
+- name: remove DISA resume file
+  gather_facts: false
+  hosts: all
+  tasks:
+
+    - name: sleep for 200 seconds and continue with play
+      wait_for:
+        timeout: 200
+      delegate_to: localhost
+
+    - name: remove command file in host
+      win_file:
+        path: "C:/DISA/DesktopIntSiebelAgent/plugins/SiebelTestAutomation/user_opted_operation.txt"
+        state: absent
+
+    - name: create command file in host
+      win_file:
+        path: "C:/DISA/DesktopIntSiebelAgent/plugins/SiebelTestAutomation/user_opted_operation.txt"
+        state: touch

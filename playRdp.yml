@@ -1,0 +1,31 @@
+---
+
+# Remote Desktop Control to the worker instances
+# The first RDP to close all the start up window, which only happen once when the Windows machine firstly created
+# The second RDP to log in the worker instance and start test execution
+
+- name: rdp to worker instances
+  gather_facts: false
+  hosts: localhost
+  tasks:
+
+    - name: assign host variable containing all ip addresses
+      shell: cat hostPlain
+      delegate_to: localhost
+      register: hostlines
+
+    - name: print the host ip address
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ hostlines.stdout_lines }}"
+
+    - name: count number of lines
+      shell: awk 'END{print NR}' hostPlain
+      delegate_to: localhost
+      register: numberOfHosts
+
+    - name: rdp to worker instances
+      shell: export DISPLAY=:{{ index + 1 }} && rdesktop -g 1920x1080 -u USER -p PASSWORD {{ item }}:3389 &
+      loop: "{{ hostlines.stdout_lines|flatten(levels=1) }}"
+      loop_control:
+        index_var: index

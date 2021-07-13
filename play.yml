@@ -1,0 +1,174 @@
+---
+
+## provision the necessary software for the worker instances
+## this ansible playbook is executed right after finishing worker instances creation
+ 
+- name: equip window machine
+  gather_facts: false
+  hosts: all
+  tasks:
+
+    ## download and install 7zip
+
+    - name: download 7zip from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/7z1900-x64.exe
+        dest: C:/Users/USER/Desktop/7z1900-x64.exe
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: install 7zip
+      win_command: cmd.exe /k start C:/Users/USER/Desktop/7z1900-x64.exe /S
+
+    ## download and install chrome
+
+    - name: download chrome.exe from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/DISA/76.0.3809.100_chrome_installer.exe 
+        dest: C:\Users\USER\Desktop\76.0.3809.100_chrome_installer.exe
+        url_username: ftpuser
+        url_password: ftppassword
+ 
+    - name: run chrome 76.0.3809.100_chrome_installer.exe
+      win_shell: C:\Users\USER\Desktop\76.0.3809.100_chrome_installer.exe
+ 
+    ## download and install java
+ 
+    - name: download java jre1.8.0_241x64.msi from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/jre1.8.0_241x64.msi
+        dest: C:\Users\USER\Desktop\jre1.8.0_241x64.msi
+        url_username: ftpuser
+        url_password: ftppassword
+ 
+    - name: run java jre1.8.0_241x64.msi
+      win_shell: msiexec.exe /i C:\Users\USER\Desktop\jre1.8.0_241x64.msi
+
+    - name: install java second time to ensure it is installed
+      win_shell: msiexec.exe /i C:\Users\USER\Desktop\jre1.8.0_241x64.msi
+ 
+    ## download and install perl
+ 
+    - name: download perl msi from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/strawberry-perl-5.30.0.1-64bit.msi
+        dest: C:\Users\USER\Desktop\strawberry-perl-5.30.0.1-64bit.msi
+        url_username: ftpuser
+        url_password: ftppassword
+ 
+    - name: run perl msi installer silent
+      win_shell: msiexec.exe /a C:\Users\USER\Desktop\strawberry-perl-5.30.0.1-64bit.msi /qn TARGETDIR=C:\      
+ 
+    ## download and install DISA
+
+    - name: download DISA install anywhere msi with configs from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/Siebel_DISA_2.19.4.zip
+        dest: C:\Users\USER\Desktop\
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: unzip DISA
+      win_command: '"C:\Program Files\7-zip\7z.exe" x C:\Users\USER\Desktop\Siebel_DISA_2.19.4.zip -oC:\Users\USER\Desktop\ -y'
+ 
+    - name: install DISA silent with configs
+      win_command: '"C:\Users\USER\Desktop\Siebel_DISA_2.19.4\Desktop_Integration_Siebel_Agent.exe" -f "C:\Users\USER\Desktop\Siebel_DISA_2.19.4\myresponse.properties" -i silent'
+      ignore_errors: yes   
+ 
+    ## copy chromedriver 76.0.3809.100
+ 
+    - name: copy chromedriver for selenium
+      win_copy:
+        srC: ./bundle/DISA/DISA/DesktopIntSiebelAgent/plugins/SiebelTestAutomation/Drivers/chromedriver.exe
+        dest: C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Drivers\chromedriver.exe
+ 
+    ## copy certificate folder contains root.cer and Redroot.cer, then install cert using certutil and keytool
+ 
+    - name: copy cert folder
+      win_copy:
+        srC: ./bundle/cert
+        dest: C:\Users\USER\Desktop
+ 
+    - name: install root.cer to TRA
+      win_shell: certutil.exe -addstore Root C:\Users\USER\Desktop\cert\root.cer
+ 
+    - name: install Redroot.cer TRA
+      win_shell: certutil.exe -addstore Root C:\Users\USER\Desktop\cert\RedReplyRootCA.crt.pem
+ 
+    ##### win command for space in path that requires "" #####
+
+    - name: install root.cer to keytool
+      win_command: '"C:\Program Files\Java\jre1.8.0_241\bin\keytool.exe" -import -noprompt -trustcacerts -alias rootCA -file C:\Users\USER\Desktop\cert\root.cer -keystore "C:\Program Files\Java\jre1.8.0_241\lib\security\cacerts" -storepass changeit'
+      ignore_errors: yes
+ 
+    - name: install Redroot.cer to keytool
+      win_command: '"C:\Program Files\Java\jre1.8.0_241\bin\keytool.exe" -import -noprompt -trustcacerts -alias RedReplyRootCA -file C:\Users\USER\Desktop\cert\RedReplyRootCA.crt.pem -keystore "C:\Program Files\Java\jre1.8.0_241\lib\security\cacerts" -storepass changeit'
+      ignore_errors: yes
+
+    ## perl scripts are used to interact with third-party application like Opentext
+
+    - name: download perl scripts (Opentext) from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/invokeperl.zip
+        dest: C:/DISA/DesktopIntSiebelAgent/plugins/SiebelTestAutomation/Resources/
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: unzip perl scripts
+      win_command: '"C:\Program Files\7-zip\7z.exe" x C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Resources\invokeperl.zip -oC:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Resources\ -y'
+
+    ## download and install Word, which is used for Opentext
+
+    - name: download Word installer from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/Word.zip
+        dest: 'C:\Users\USER\Desktop\Word.zip'
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: unzip Word
+      win_command: '"C:\Program Files\7-zip\7z.exe" x C:\Users\USER\Desktop\Word.zip -oC:\Users\USER\Desktop\ -y'
+
+    - name: install Word
+      win_command: 'C:\Users\USER\Desktop\setup1\Office\Setup32.exe'
+
+    ## download and install Powerdoc, which is used for Opentext
+
+    - name: download Powerdoc from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/Exstream-PowerDocs-16.3.0.704-Setup.exe
+        dest: C:\Users\USER\Desktop\Exstream-PowerDocs-16.3.0.704-Setup.exe
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: install Powerdoc
+      win_command: 'C:\Users\USER\Desktop\Exstream-PowerDocs-16.3.0.704-Setup.exe /S'
+
+    - name: download Powerdoc Content Designer from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/Exstream-Content-Designer-16.3.0.704-Setup.exe
+        dest: C:\Users\USER\Desktop\Exstream-Content-Designer-16.3.0.704-Setup.exe
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: install Powerdoc Content Designer
+      win_command: 'C:\Users\USER\Desktop\Exstream-Content-Designer-16.3.0.704-Setup.exe /S'
+
+    ## copy host file containing mapping servers or hostnames to IP addresses
+
+    - name: copy host file
+      win_copy:
+        srC: ./bundle/hosts
+        dest: C:\Windows\System32\drivers\etc\hosts
+
+    ## download jar file to automatically run Opentext
+
+    - name: download Intellij contains Opentext Automation script from FTP server
+      win_get_url:
+        url: ftp://master-machine-IP/files/Intellij.zip
+        dest: C:\Users\USER\Desktop\Intellij.zip
+        url_username: ftpuser
+        url_password: ftppassword
+
+    - name: unzip Intellij
+      win_command: '"C:\Program Files\7-zip\7z.exe" x C:\Users\USER\Desktop\Intellij.zip -oC:\Users\USER\Desktop\ -y'

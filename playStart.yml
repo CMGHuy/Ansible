@@ -1,0 +1,15 @@
+## Copy the batch file containing the script to execute test automation
+## The file is stored in the Startup folder of the worker instances
+## Restart the instance will trigger test run automatically when it is up again
+
+- name: copy startUp bat initiating test run to worker instances
+  gather_facts: false
+  hosts: all
+  tasks: 
+    - name: copy startUp bat 
+      win_copy:
+        src: ./bundle/startUp.bat
+        dest: "C:/Users/VLE/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/"
+    - name: reboot a machine that takes time to settle after being booted
+      win_reboot:
+        post_reboot_delay: 200

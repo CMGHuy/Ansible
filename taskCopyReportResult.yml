@@ -1,0 +1,17 @@
+## This Ansible playbook is used to retrieve all the test result from worker instances
+## The test result folder is zipped first
+## Then, it is copied back into the master instance
+
+      - name: zip report result folder
+        win_command: '"C:\Program Files\7-zip\7z.exe" a C:\Users\USER\Desktop\reports.zip C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Reports\*'
+        register: output  
+
+      - name: print the zipped folder name
+        debug:
+          msg: "{{ output }}"
+
+      - name: copy report back
+        fetch: 
+          src: C:\Users\USER\Desktop\reports.zip
+          dest: ~/mnt/ansible/reportResult/report-{{ inventory_hostname }}/reports.zip
+          flat: true 

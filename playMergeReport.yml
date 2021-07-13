@@ -1,0 +1,53 @@
+---
+
+# This Ansible playbook is used to merge test results when test execution finishes
+# If the test progress is 100 %, a file "done" is created in folder currentProgress
+# The file "done" exists, it copied the zipped test result from worker instances back to the master machine
+# Then, the Python merge script is used to merge all the test scripts.
+
+- name: check if test run has finished, then retrieve and merge reports
+  gather_facts: false
+  hosts: all
+  tasks:
+    # win_stat is used to check for file on window machine. stat is used for linux.
+    - name: check that the output file "done" exists
+      delegate_to: localhost
+      stat: 
+        path: "~/mnt/executable//testProgress/currentProgress/done"
+      register: test_completed
+
+    - name: print the finishing message
+      delegate_to: localhost
+      debug: msg="test run completed!"
+      when: test_completed.stat.exists
+
+    - name: copy report result back to master machine if run completed
+      include_tasks: taskCopyReportResult.yml
+      when: test_completed.stat.exists
+
+    - name: run merge report script
+      script: ~/mnt/executable/mergeReport.sh
+      delegate_to: localhost
+      run_once: true
+      when: test_completed.stat.exists
+
+    - name: remove cronjob heartBeatTestProgress
+      delegate_to: localhost
+      cron:
+        name: "heartBeatTestProgress"
+        state: absent
+      when: test_completed.stat.exists
+
+    - name: remove cronjob heartBeatMergeReports
+      delegate_to: localhost
+      cron:
+        name: "heartBeatMergeReports"
+        state: absent
+      when: test_completed.stat.exists
+
+    # Remove all old fines, which are unnecessary for the next executions
+#    - name: remove old files including reports, divided master suite, ...
+#      script: ~/mnt/executable/removeOldFile.sh
+#      delegate_to: localhost
+#      run_once: true 
+#      when: test_completed.stat.exists

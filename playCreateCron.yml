@@ -1,0 +1,22 @@
+---
+
+# Create cron jobs to continuously check test progress and test result if finished
+
+- name: create cronjob to check for test progress
+  gather_facts: false
+  hosts: localhost
+  tasks:
+
+    - name: check test progress every 5 min
+      cron:
+        minute: "*/5"
+        name: "heartBeatTestProgress"
+        job: "ansible-playbook -i /home/ubuntu/mnt/ansible/hosts /home/ubuntu/mnt/ansible/playCheckRunProgress.yml --extra-var 'test={{ testName }}'"
+        state: present
+
+    - name: merge reports if finished every 6 min
+      cron:
+        minute: "*/6"
+        name: "heartBeatMergeReports"
+        job: "ansible-playbook -i /home/ubuntu/mnt/ansible/hosts /home/ubuntu/mnt/ansible/playMergeReport.yml"
+        state: present

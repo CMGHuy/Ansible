@@ -1,0 +1,45 @@
+---
+
+# This Ansible playbook is used to copy test configuration files into each worker instance
+# In the master machine, it takes a random divided test set, rename it to "test.csv"
+# Then, the file is copied into the appropriate location on the worker instance
+# Its name is changed back to the master suite name again
+# The already copied test set in the master machine is deleted
+
+- name: move config files to worker instances
+  gather_facts: false
+  hosts: all
+  serial: 1
+  tasks:
+    - name: copy batch config to worker instances
+      win_copy:
+        src: /home/ubuntu/mnt/executable/configDownloader/outputFile/batchconfig.xml
+        dest: C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\batchconfig.xml
+
+    - name: assign test part name to a variable 
+      shell: ls /home/ubuntu/mnt/executable/fileDivider/DividedFile/ | shuf -n 1  
+      delegate_to: localhost
+      register: csvFileName
+
+    - name: rename the selected test part to "test.csv"
+      shell: mv /home/ubuntu/mnt/executable/fileDivider/DividedFile/{{csvFileName.stdout}} /home/ubuntu/mnt/executable/fileDivider/DividedFile/test.csv
+      delegate_to: localhost
+
+    - name: copy test part file to worker instance
+      win_copy:
+        src: /home/ubuntu/mnt/executable/fileDivider/DividedFile/test.csv
+        dest: C:\Users\VLE\Desktop\test.csv
+
+    - name: rename the copied test part
+      win_command: cmd.exe
+      args:
+        stdin: rename C:\Users\VLE\Desktop\test.csv "{{ testName }}.csv"
+
+    - name: move the test part to the appropriate location
+      win_command: cmd.exe
+      args:
+        stdin: copy C:\Users\VLE\Desktop\*.csv C:\DISA\DesktopIntSiebelAgent\plugins\SiebelTestAutomation\Scripts\              
+    
+    - name: remove test.csv file in local
+      local_action: file path=/home/ubuntu/mnt/executable/fileDivider/DividedFile/test.csv state=absent
+     
