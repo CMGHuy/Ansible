@@ -11,8 +11,8 @@ The following Ansible playbook serves for different purposes including:
 
 Regarding the files, which are copied into the worker instances, lots of them have great size,  
 which are not able to upload here, which include:  
-    - Word installation file  
-    - Siebel Test Automation application  
-    - File Intellij.zip, which used to run Opentext test cases  
-    - Java installation file  
-    - Perl installation file  
+- Word installation file  
+- Siebel Test Automation application  
+- File Intellij.zip, which used to run Opentext test cases  
+- Java installation file  
+- Perl installation file  
